@@ -11,7 +11,13 @@ contract FundMe {
     address[] public funders;
     mapping(address => uint256) public addressToAmountFunded;
 
-    function fund() public payable {
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function fund() public payable onlyOwner {
         require(msg.value.getConversionRate() >= MINIMUM_USD, "You need to spend more ETH!");
         addressToAmountFunded[msg.sender] = msg.value;
         funders.push(msg.sender);
@@ -26,6 +32,13 @@ contract FundMe {
         // reset the array
         funders = new address[](0);
         // actually withdraw the funds
-        
+        (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
+        require(callSuccess, "Call failed");
     }
+
+    modifier onlyOwner {
+        require(msg.sender == owner, "Sender is not owner!");
+        _;
+    }
+    
 }
